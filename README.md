@@ -18,6 +18,8 @@ npm start
 
 Open **http://localhost:4300**, the demo index.
 
+**Presenting the system?** Follow the step-by-step [demo guide](demos/README.md). It has a script for each demo, talking points, and how to reset.
+
 | Port | What |
 |---|---|
 | 4000 | FAIRDOC API, mock Entra ID, widget, SDK and iframe embed |
