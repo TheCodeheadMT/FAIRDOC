@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAIRDOC Integration Demos</title>
+<style>
+  :root { --bg:#f7f7f8; --fg:#18181b; --muted:#63636b; --card:#fff; --line:#e4e4e7; --accent:#2563eb; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0f11; --fg:#f4f4f5; --muted:#a1a1aa; --card:#18181b; --line:#2a2a2e; --accent:#60a5fa; } }
+  :root[data-theme="dark"] { --bg:#0f0f11; --fg:#f4f4f5; --muted:#a1a1aa; --card:#18181b; --line:#2a2a2e; --accent:#60a5fa; }
+  * { box-sizing:border-box; } body { margin:0; font:15px/1.55 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:980px; margin:0 auto; padding:32px 16px; } h1 { margin:0 0 6px; } p.lead { color:var(--muted); margin-top:0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-top:22px; }
+  a.card { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; color:inherit; text-decoration:none; }
+  a.card:hover { border-color:var(--accent); } a.card h2 { font-size:16px; margin:4px 0 6px; } .n { color:var(--accent); font-weight:700; font-size:13px; }
+  .muted { color:var(--muted); font-size:13.5px; } code { font-size:13px; } table { width:100%; border-collapse:collapse; margin-top:24px; font-size:13.5px; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FAIRDOC integration demos</h1>
+  <p class="lead">Five host apps, five ways to attach FAIRDOC document storage. Each one exercises every function, using only the user's O365 token and an optional group.</p>
+  <div class="grid">
+    <a class="card" href="/1-course-site/"><span class="n">DEMO 1</span><h2>Course site — drop-in widget</h2><div class="muted">One script tag plus <code>&lt;fairdoc-widget&gt;</code>. The host passes the token and course group, and gets events back.</div></a>
+    <a class="card" href="/2-lab-notebook/"><span class="n">DEMO 2</span><h2>Lab notebook — headless SDK</h2><div class="muted">A custom NotebookLM-style UI built directly on SDK calls, with FAIR metadata completeness scoring.</div></a>
+    <a class="card" href="http://localhost:4100/"><span class="n">DEMO 3</span><h2>Advising portal — backend proxy</h2><div class="muted">The token stays on the app server, which forwards calls to FAIRDOC and also uses the SDK server-side.</div></a>
+    <a class="card" href="#cli"><span class="n">DEMO 4</span><h2>Research data ingest — CLI / script</h2><div class="muted">Bulk upload with metadata sidecars from a terminal or scheduled job. Run <code>npm run demo:cli</code>.</div></a>
+    <a class="card" href="/5-committee-portal/"><span class="n">DEMO 5</span><h2>Committee portal — iframe + postMessage</h2><div class="muted">An embedded FAIRDOC-hosted UI from another origin. The host steers it and receives a live event feed.</div></a>
+  </div>
+  <table>
+    <tr><th>Function</th><th>1 Widget</th><th>2 SDK</th><th>3 Proxy</th><th>4 CLI</th><th>5 iframe</th></tr>
+    <tr><td>Sign in by token pass-through (no app registration)</td><td>✓</td><td>✓</td><td>✓ server-held</td><td>✓</td><td>✓ postMessage</td></tr>
+    <tr><td>Group context from token claims</td><td>✓ course</td><td>✓ switcher</td><td>✓ server-pinned</td><td>✓ --group</td><td>✓ committee</td></tr>
+    <tr><td>Create collections (user- or group-owned, labelled)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Upload with FAIR metadata, persistent ID</td><td>✓</td><td>✓</td><td>✓</td><td>✓ bulk</td><td>✓</td></tr>
+    <tr><td>List, search, download</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Versions and version history</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Edit metadata, JSON-LD export</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Share and revoke (groups and users)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Delete and restore</td><td>✓</td><td>✓ trash</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Move (with sensitivity-label policy)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Audit trail (document history, own trail, admin verify)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Usage statistics</td><td>✓</td><td>✓</td><td>✓ + server KPIs</td><td>✓</td><td>✓</td></tr>
+  </table>
+  <p class="muted" id="cli" style="margin-top:22px">Demo 4: <code>cd demos/4-ingest-cli && node fairdoc-cli.mjs walkthrough</code>. Switch users in any demo, e.g. to <b>Pat Morgan (IT Admin)</b>, to see admin views: all collections, audit chain verification and global stats.</p>
+</main>
+</body>
+</html>

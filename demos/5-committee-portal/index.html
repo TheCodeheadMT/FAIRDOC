@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curriculum Committee Portal</title>
+<style>
+  :root { --bg:#fbf7f2; --fg:#2a1d12; --muted:#7a6656; --card:#fff; --line:#eadfd2; --brand:#b45309; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16110c; --fg:#f3e9de; --muted:#b09a86; --card:#211a13; --line:#3a2e22; --brand:#f59e0b; } }
+  :root[data-theme="dark"] { --bg:#16110c; --fg:#f3e9de; --muted:#b09a86; --card:#211a13; --line:#3a2e22; --brand:#f59e0b; }
+  * { box-sizing:border-box; } body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:14px 16px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:18px; } header h1 span { color:var(--brand); }
+  .wrap { max-width:1250px; margin:0 auto; padding:16px; display:grid; grid-template-columns:1fr 300px; gap:16px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns:1fr; } }
+  iframe { width:100%; height:760px; border:1px solid var(--line); border-radius:10px; background:var(--card); }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .panel h3 { margin:0 0 8px; font-size:14px; }
+  .muted { color:var(--muted); font-size:12.5px; }
+  #feed { list-style:none; margin:0; padding:0; max-height:360px; overflow:auto; font-size:12.5px; }
+  #feed li { padding:6px 0; border-bottom:1px solid var(--line); } #feed b { color:var(--brand); }
+  .btns { display:flex; flex-wrap:wrap; gap:6px; }
+  button { font:inherit; font-size:12.5px; border:1px solid var(--line); background:var(--bg); color:var(--fg); border-radius:6px; padding:5px 9px; cursor:pointer; }
+  button:hover { border-color:var(--brand); }
+  code { font-size:12px; }
+</style>
+</head>
+<body>
+<header><h1>📚 <span>Curriculum Committee</span> Portal</h1><div id="signin"></div></header>
+<div class="wrap">
+  <div>
+    <div class="panel muted"><b>Demo 5 — iframe embed + postMessage.</b> The portal embeds FAIRDOC's hosted UI from another origin (<code>:4000</code> inside <code>:4300</code>).
+      The token goes to the frame via <code>postMessage</code>, never in the URL. Both sides check origins. The frame reports every action back to the host (activity feed →),
+      and the host can steer it (tabs, token refresh).</div>
+    <iframe id="fd" title="FAIRDOC documents" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals"></iframe>
+  </div>
+  <aside>
+    <div class="panel"><h3>Host controls the frame</h3><div class="btns">
+      <button data-tab="files">Documents</button><button data-tab="search">Search</button><button data-tab="sharing">Sharing</button><button data-tab="activity">Audit log</button><button data-tab="stats">Usage</button>
+      <button id="refresh">Refresh token</button></div></div>
+    <div class="panel"><h3>Live events from FAIRDOC</h3><ul id="feed"><li class="muted">Waiting for frame…</li></ul></div>
+  </aside>
+</div>
+<script type="module">
+  import { mountSignIn, FAIRDOC_URL, peek } from '../shared/mock-signin.js';
+  const FAIRDOC_ORIGIN = new URL(FAIRDOC_URL).origin;
+  const COMMITTEE_GROUP = 'a1b2c3d4-0004-4000-8000-curriculum01';
+  const frame = document.getElementById('fd');
+  const feed = document.getElementById('feed');
+  let token, ready = false;
+
+  const log = (html) => { if (feed.firstElementChild?.classList.contains('muted')) feed.innerHTML = ''; feed.insertAdjacentHTML('afterbegin', `<li><span class="muted">${new Date().toLocaleTimeString()}</span> ${html}</li>`); };
+  const send = (msg) => frame.contentWindow.postMessage(msg, FAIRDOC_ORIGIN); // only FAIRDOC's origin can read it
+  // Only claim the committee group when the user's token actually has it; otherwise personal files.
+  const init = () => { if (ready && token) send({ type: 'fairdoc:init', token, group: (peek(token).groups || []).includes(COMMITTEE_GROUP) ? COMMITTEE_GROUP : null }); };
+
+  window.addEventListener('message', (e) => {
+    if (e.origin !== FAIRDOC_ORIGIN) return; // only trust FAIRDOC
+    const m = e.data;
+    if (m.type === 'fairdoc:ready') { ready = true; log('<b>frame ready</b> — sending token'); init(); }
+    if (m.type === 'fairdoc:need-token') { log('<b>token expired</b> — refreshing'); document.getElementById('refresh').click(); }
+    if (m.type === 'fairdoc:event') {
+      const ev = m.event;
+      const what = ev.document?.title || ev.collection?.name || ev.q || ev.message || ev.documentId || '';
+      log(`<b>${ev.type}</b> ${String(what).replace(/</g, '&lt;')}`);
+    }
+  });
+
+  document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => send({ type: 'fairdoc:tab', tab: b.dataset.tab })));
+  document.getElementById('refresh').addEventListener('click', async () => {
+    const r = await fetch(`${FAIRDOC_URL}/mock-entra/token`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser, clientId: 'committee-portal' }) });
+    token = (await r.json()).access_token; send({ type: 'fairdoc:token', token }); log('<b>token refreshed</b> and passed to frame');
+  });
+
+  let currentUser;
+  frame.src = `${FAIRDOC_URL}/embed/`;
+  await mountSignIn(document.getElementById('signin'), {
+    clientId: 'committee-portal', defaultUser: 'u-0003-okafor',
+    onToken: (t, u) => { token = t; currentUser = u.id; log(`signed in as <b>${u.name}</b>`); init(); },
+  });
+</script>
+</body>
+</html>

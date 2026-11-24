@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIO 101 Course Site</title>
+<style>
+  :root { --bg:#f6f7f4; --fg:#1c2a1f; --muted:#5f6d61; --card:#fff; --line:#dfe4dc; --brand:#2f6b3a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121712; --fg:#e7ede6; --muted:#9aa89b; --card:#1a211b; --line:#2c372d; --brand:#7cc48a; } }
+  :root[data-theme="dark"] { --bg:#121712; --fg:#e7ede6; --muted:#9aa89b; --card:#1a211b; --line:#2c372d; --brand:#7cc48a; }
+  * { box-sizing:border-box; } body { margin:0; font:15px/1.5 Georgia, "Iowan Old Style", serif; background:var(--bg); color:var(--fg); }
+  .top { background:var(--brand); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .top h1 { font-size:20px; margin:0; } .top select { color:#111; }
+  main { max-width:1100px; margin:0 auto; padding:20px 16px; display:grid; grid-template-columns:220px 1fr; gap:24px; }
+  @media (max-width: 760px) { main { grid-template-columns:1fr; } }
+  aside a { display:block; padding:6px 0; color:var(--fg); text-decoration:none; border-bottom:1px solid var(--line); } aside a.on { color:var(--brand); font-weight:bold; }
+  h2 { margin-top:0; } .note { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:14px; color:var(--muted); }
+  code, pre { font-family: ui-monospace, Menlo, monospace; font-size:12.5px; } pre { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; overflow:auto; }
+  #toast { position:fixed; right:16px; bottom:16px; background:var(--fg); color:var(--bg); padding:10px 14px; border-radius:8px; font:13px system-ui; opacity:0; transition:opacity .3s; max-width:340px; }
+  fairdoc-widget { --fd-accent: var(--brand); margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="top"><h1>🌱 BIO 101 — Introduction to Biology · Fall 2026</h1><div id="signin"></div></div>
+<main>
+  <aside><a href="#">Home</a><a href="#">Syllabus</a><a href="#">Modules</a><a href="#" class="on">Course Files</a><a href="#">Grades</a><a href="#">People</a></aside>
+  <section>
+    <h2>Course Files</h2>
+    <div class="note"><b>Demo 1 — Drop-in widget.</b> This course site adds FAIRDOC with one script tag and one HTML element.
+      It passes the signed-in user's O365 token and the course's Entra group id. Every tab in the panel below works:
+      collections, upload with FAIR metadata, versions, metadata edit and JSON-LD, move, delete and restore, sharing, search, activity log and usage stats.
+      <details><summary>Integration code</summary><pre>&lt;script type="module" src="http://localhost:4000/widget/fairdoc-widget.js"&gt;&lt;/script&gt;
+&lt;fairdoc-widget id="docs" api-base="http://localhost:4000"
+                group="a1b2c3d4-0001-4000-8000-bio101000001"&gt;&lt;/fairdoc-widget&gt;
+&lt;script&gt;
+  docs.getToken = () =&gt; msal.acquireTokenSilent(...).then(r =&gt; r.idToken);
+  docs.start();
+  docs.addEventListener('fairdoc:event', e =&gt; console.log(e.detail));
+&lt;/script&gt;</pre></details></div>
+    <fairdoc-widget id="docs"></fairdoc-widget>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+<script type="module">
+  import { mountSignIn, FAIRDOC_URL, peek } from '../shared/mock-signin.js';
+  await import(`${FAIRDOC_URL}/widget/fairdoc-widget.js`);
+  const docs = document.getElementById('docs');
+  docs.setAttribute('api-base', FAIRDOC_URL);
+  let token;
+  docs.getToken = () => token;
+  // The host app reacts to widget events — e.g. course notifications.
+  const toast = document.getElementById('toast');
+  docs.addEventListener('fairdoc:event', (e) => {
+    const d = e.detail;
+    const msg = { 'document.uploaded': `Posted to course files: ${d.document?.title}`, 'document.deleted': 'File removed (recoverable)', 'collection.shared': 'Sharing updated', error: `FAIRDOC: ${d.message}` }[d.type];
+    if (!msg) return;
+    toast.textContent = msg; toast.style.opacity = 1; clearTimeout(toast.t); toast.t = setTimeout(() => (toast.style.opacity = 0), 3000);
+  });
+  await mountSignIn(document.getElementById('signin'), {
+    clientId: 'bio101-course-site', defaultUser: 'u-0003-okafor',
+    onToken: (t) => {
+      token = t;
+      // Course context only for course members (from the token's groups claim); others see personal files.
+      const COURSE = 'a1b2c3d4-0001-4000-8000-bio101000001';
+      if ((peek(t).groups || []).includes(COURSE)) docs.setAttribute('group', COURSE); else docs.removeAttribute('group');
+      docs.start();
+    },
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Notebook</title>
+<style>
+  :root { --bg:#faf8f5; --panel:#fff; --fg:#1f1d1a; --muted:#6f6a62; --line:#e8e3da; --accent:#7c3aed; --accent-soft:#ede9fe; --danger:#b42318; --ok:#067647; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141311; --panel:#1d1b19; --fg:#f2efe9; --muted:#a39d93; --line:#2f2c28; --accent:#a78bfa; --accent-soft:#2e2545; --danger:#f97066; --ok:#47cd89; } }
+  :root[data-theme="dark"] { --bg:#141311; --panel:#1d1b19; --fg:#f2efe9; --muted:#a39d93; --line:#2f2c28; --accent:#a78bfa; --accent-soft:#2e2545; --danger:#f97066; --ok:#47cd89; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 "Inter", system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--fg); }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  .app { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
+  @media (max-width: 820px) { .app { grid-template-columns:1fr; } .side { border-right:0; border-bottom:1px solid var(--line); } }
+  .side { border-right:1px solid var(--line); padding:16px; background:var(--panel); }
+  .logo { font-weight:700; font-size:17px; margin-bottom:4px; } .logo span { color:var(--accent); }
+  .muted { color:var(--muted); font-size:12.5px; }
+  .side h4 { font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:18px 0 6px; }
+  .nb { display:flex; justify-content:space-between; width:100%; text-align:left; border:0; background:none; padding:7px 9px; border-radius:7px; cursor:pointer; }
+  .nb:hover { background:var(--bg); } .nb.on { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  .main { padding:20px 24px; min-width:0; }
+  .bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+  .grow { flex:1; min-width:180px; }
+  input, select, textarea { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+  textarea { width:100%; min-height:60px; }
+  .btn { border:1px solid var(--line); background:var(--panel); border-radius:8px; padding:7px 12px; cursor:pointer; }
+  .btn:hover { border-color:var(--accent); } .btn.pri { background:var(--accent); color:#fff; border-color:var(--accent); } .btn.dan { color:var(--danger); } .btn.sm { padding:3px 9px; font-size:12.5px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; cursor:pointer; transition:border-color .15s; }
+  .card:hover { border-color:var(--accent); } .card h3 { margin:0 0 4px; font-size:15px; }
+  .card.trash { opacity:.65; cursor:default; }
+  .meter { height:5px; background:var(--line); border-radius:3px; overflow:hidden; margin:10px 0 4px; } .meter i { display:block; height:100%; background:var(--accent); }
+  .chip { display:inline-block; font-size:11px; padding:1px 8px; border-radius:99px; background:var(--bg); border:1px solid var(--line); margin:2px 3px 0 0; }
+  .Protected { color:#b42318; border-color:#fda29b; } .Internal { color:#3538cd; border-color:#a4bcfd; } .Public { color:#067647; border-color:#75e0a7; }
+  .box { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .fgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+  label.f { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); }
+  .drawer { position:fixed; inset:0 0 0 auto; width:min(560px,100%); background:var(--panel); border-left:1px solid var(--line); box-shadow:-10px 0 30px rgba(0,0,0,.12); padding:18px; overflow:auto; transform:translateX(100%); transition:transform .2s; z-index:5; }
+  .drawer.open { transform:none; }
+  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin:12px 0; flex-wrap:wrap; }
+  .tabs button { border:0; background:none; padding:8px 10px; cursor:pointer; color:var(--muted); border-bottom:2px solid transparent; }
+  .tabs button.on { color:var(--fg); border-bottom-color:var(--accent); font-weight:600; }
+  table { width:100%; border-collapse:collapse; font-size:13px; } td, th { padding:6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { font-size:11px; color:var(--muted); text-transform:uppercase; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; font-size:12px; overflow:auto; }
+  .flash { padding:9px 12px; border-radius:8px; margin-bottom:14px; } .flash.ok { background:color-mix(in srgb, var(--ok) 15%, transparent); color:var(--ok); } .flash.err { background:color-mix(in srgb, var(--danger) 15%, transparent); color:var(--danger); }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; } .kpi { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; } .kpi b { display:block; font-size:24px; }
+  .hbar { display:grid; grid-template-columns:120px 1fr 40px; gap:8px; align-items:center; font-size:12.5px; margin:5px 0; } .hbar i { height:8px; background:var(--accent); border-radius:4px; display:block; min-width:2px; }
+  #signin label { flex-wrap:wrap; } #signin select { width:100%; }
+  .demo-note { font-size:12.5px; color:var(--muted); background:var(--accent-soft); border-radius:8px; padding:8px 10px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo">🧪 Lab<span>Notebook</span></div>
+    <div class="muted" id="who">…</div>
+    <div id="signin" style="margin-top:10px"></div>
+    <h4>Workspace (group from O365 token)</h4>
+    <select id="group" style="width:100%"></select>
+    <h4>Notebooks</h4>
+    <div id="nbs"></div>
+    <form id="newnb" style="margin-top:8px;display:grid;gap:6px">
+      <input name="name" placeholder="+ New notebook" required>
+      <select name="label"><option>Internal</option><option>Protected</option><option>Public</option></select>
+      <button class="btn sm">Create notebook</button>
+    </form>
+    <h4>Views</h4>
+    <button class="nb" data-view="search">🔎 Search all sources</button>
+    <button class="nb" data-view="trash">🗑 Trash (restore)</button>
+    <button class="nb" data-view="dashboard">📊 Lab dashboard & audit</button>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<aside class="drawer" id="drawer"></aside>
+
+<script type="module">
+import { mountSignIn, FAIRDOC_URL } from '../shared/mock-signin.js';
+const { FairDoc, saveDownload } = await import(`${FAIRDOC_URL}/sdk/fairdoc.js`);
+
+// Demo 2 — Headless SDK. FAIRDOC provides no UI here; this app owns every pixel and
+// calls the SDK directly, passing the user's O365 token and the selected group.
+let token;
+const fd = new FairDoc({ baseUrl: FAIRDOC_URL, getToken: () => token });
+const S = { me: null, cols: [], col: null, docs: [], view: 'notebook', flash: null, drawer: null };
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const kb = (n) => (n < 1024 ? `${n} B` : `${(n / 1024).toFixed(1)} KB`);
+const ago = (t) => new Date(t).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+const list = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+
+// FAIR completeness: how much of the metadata that makes a source reusable is filled in.
+const fairScore = (d) => {
+  const m = d.metadata, checks = [d.pid, d.title, m.description, (m.creators || []).length, (m.keywords || []).length, m.license && m.license !== 'All rights reserved', m.resourceType, m.language];
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+};
+
+async function run(fn, okMsg) {
+  try { await fn(); if (okMsg) S.flash = { k: 'ok', t: okMsg }; } catch (e) { S.flash = { k: 'err', t: `${e.status || ''} ${e.message}` }; }
+  render();
+}
+
+async function boot() {
+  S.me = await fd.me();
+  $('#who').textContent = `${S.me.name} · ${S.me.upn}`;
+  const g = $('#group');
+  const prev = g.value;
+  g.innerHTML = `<option value="">No group — everything I can access</option>` + S.me.groups.map((x) => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
+  g.value = S.me.groups.some((x) => x.id === prev) ? prev : (S.me.groups.find((x) => x.name.includes('Genomics'))?.id || '');
+  fd.setGroup(g.value);
+  await loadCols();
+}
+async function loadCols(keep) {
+  S.cols = await fd.listCollections();
+  S.col = S.cols.find((c) => c.id === (keep || S.col?.id)) || S.cols[0] || null;
+  S.docs = S.col ? await fd.listDocuments(S.col.id, { includeDeleted: true }) : [];
+  render();
+}
+
+function render() {
+  $('#nbs').innerHTML = S.cols.map((c) => `<button class="nb ${c.id === S.col?.id && S.view === 'notebook' ? 'on' : ''}" data-col="${c.id}"><span>${esc(c.name)}</span><span class="muted">${c.documentCount}</span></button>`).join('') || '<div class="muted">No notebooks in this workspace.</div>';
+  const flash = S.flash ? `<div class="flash ${S.flash.k}">${esc(S.flash.t)}</div>` : '';
+  S.flash = null;
+  $('#main').innerHTML = flash + ({ notebook: vNotebook, search: vSearch, trash: vTrash, dashboard: vDashboard }[S.view])();
+  renderDrawer();
+}
+
+function vNotebook() {
+  const c = S.col;
+  if (!c) return `<div class="demo-note"><b>Demo 2 — Headless SDK.</b> This app draws its own UI and calls <code>FairDoc</code> SDK methods directly.</div><p>Create a notebook to begin.</p>`;
+  const docs = S.docs.filter((d) => !d.deletedAt);
+  const canWrite = ['write', 'manage'].includes(c.myRole);
+  return `<div class="demo-note"><b>Demo 2 — Headless SDK.</b> Every control here is this app's own UI on top of SDK calls: <code>upload</code>, <code>newVersion</code>, <code>updateMetadata</code>, <code>exportMetadata</code>, <code>moveDocument</code>, <code>deleteDocument</code>/<code>restoreDocument</code>, <code>share</code>, <code>search</code>, <code>documentAudit</code>, <code>stats</code>.</div>
+    <div class="bar"><div class="grow"><h2 style="margin:0">${esc(c.name)}</h2><div class="muted">Owner: ${esc(c.ownerName)} · your access: ${c.myRole} · <span class="chip ${c.label}">${c.label}</span></div></div></div>
+    ${canWrite ? `<form class="box" id="addsrc"><b>Add a source</b>
+      <div class="fgrid" style="margin-top:10px"><input type="file" name="file" required><input name="title" placeholder="Title"><input name="keywords" placeholder="Keywords, comma separated">
+        <select name="resourceType"><option>Dataset</option><option>Text</option><option>Image</option><option>Software</option></select>
+        <select name="license"><option>CC-BY-4.0</option><option>CC0-1.0</option><option>All rights reserved</option></select>
+        <select name="label">${['Protected', 'Internal', 'Public'].map((l) => `<option ${l === c.label ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <textarea name="description" placeholder="Describe the source so others can find and reuse it" style="margin-top:8px"></textarea>
+      <button class="btn pri" style="margin-top:8px">Add source</button></form>` : ''}
+    <div class="cards">${docs.map(card).join('') || '<p class="muted">No sources yet.</p>'}</div>
+    ${shareBox(c)}`;
+}
+
+function card(d) {
+  const f = fairScore(d);
+  return `<div class="card" data-open="${d.id}"><h3>${esc(d.title)}</h3><div class="muted">${esc(d.latest?.filename || '')} · v${d.latest?.version || 0} · ${d.latest ? kb(d.latest.size) : ''}</div>
+    <div>${(d.metadata.keywords || []).slice(0, 4).map((k) => `<span class="chip">${esc(k)}</span>`).join('')}<span class="chip ${d.label}">${d.label}</span></div>
+    <div class="meter" title="FAIR metadata completeness"><i style="width:${f}%"></i></div><div class="muted">FAIR metadata ${f}% · ${esc(d.pid)}</div></div>`;
+}
+
+function shareBox(c) {
+  const manage = c.myRole === 'manage';
+  return `<div class="box" style="margin-top:18px"><b>Who can see this notebook</b>
+    <table style="margin-top:8px"><tr><td>${esc(c.ownerName)}</td><td>owner</td><td></td></tr>
+    ${c.shares.map((s) => `<tr><td>${esc(s.name)}</td><td>${s.type} · ${s.role}</td><td>${manage ? `<button class="btn sm dan" data-unshare="${esc(s.id)}">Revoke</button>` : ''}</td></tr>`).join('')}</table>
+    ${manage ? `<form id="share" class="bar" style="margin:10px 0 0"><select name="target" class="grow">${S.me.groups.map((g) => `<option value="group:${g.id}">👥 ${esc(g.name)}</option>`).join('')}
+      ${['u-0001-srivera', 'u-0002-achen', 'u-0003-okafor'].map((u) => `<option value="user:${u}">👤 ${u}</option>`).join('')}</select>
+      <select name="role"><option>read</option><option>write</option></select><button class="btn">Share</button></form>` : ''}</div>`;
+}
+
+function vSearch() {
+  return `<h2>Search sources</h2><form id="search" class="bar"><input name="q" class="grow" placeholder="title, keyword, creator, description, PID…" value="${esc(S.q || '')}"><button class="btn pri">Search</button></form>
+    <div class="cards">${(S.results || []).map((d) => card(d).replace('</h3>', `</h3><div class="muted">in ${esc(d.collectionName)}</div>`)).join('') || (S.results ? '<p class="muted">No matches.</p>' : '')}</div>`;
+}
+
+function vTrash() {
+  const del = S.docs.filter((d) => d.deletedAt);
+  return `<h2>Trash — ${esc(S.col?.name || '')}</h2><p class="muted">Deleted sources stay recoverable; the deletion is in the audit log.</p>
+    <div class="cards">${del.map((d) => `<div class="card trash"><h3>${esc(d.title)}</h3><div class="muted">Deleted ${ago(d.deletedAt)} by ${esc(d.deletedByUpn)}</div><button class="btn sm" style="margin-top:8px" data-restore="${d.id}">Restore</button></div>`).join('') || '<p class="muted">Trash is empty.</p>'}</div>`;
+}
+
+function vDashboard() {
+  const st = S.stats, au = S.audit || [];
+  if (!st) return '<p class="muted">Loading…</p>';
+  const acts = Object.entries(st.eventsByAction).sort((a, b) => b[1] - a[1]).slice(0, 8), mx = Math.max(1, ...acts.map((a) => a[1]));
+  return `<h2>Lab dashboard</h2><div class="kpis">${[['Sources', st.documents], ['Versions', st.versions], ['Stored', kb(st.bytes)], ['Notebooks', st.collections], ['In trash', st.deletedDocuments], ['Denied', st.denied]].map(([k, v]) => `<div class="kpi"><span class="muted">${k}</span><b>${v}</b></div>`).join('')}</div>
+    <div class="box" style="margin-top:16px"><b>What you did most</b>${acts.map(([k, v]) => `<div class="hbar"><span>${esc(k)}</span><i style="width:${(v / mx) * 100}%"></i><span>${v}</span></div>`).join('')}</div>
+    <div class="box"><b>Your audit trail</b> <span class="muted">(kept ≥ 3 years)</span><table style="margin-top:8px"><tr><th>When</th><th>Action</th><th>App</th><th>Outcome</th></tr>
+    ${au.slice(0, 25).map((e) => `<tr><td class="muted">${ago(e.ts)}</td><td>${esc(e.action)}</td><td>${esc(e.app)}</td><td>${e.outcome}</td></tr>`).join('')}</table></div>`;
+}
+
+function renderDrawer() {
+  const dr = $('#drawer');
+  if (!S.drawer) { dr.classList.remove('open'); return; }
+  const d = S.docs.find((x) => x.id === S.drawer.id) || S.drawer.doc;
+  if (!d) { dr.classList.remove('open'); return; }
+  const tab = S.drawer.tab || 'meta';
+  const w = ['write', 'manage'].includes(S.cols.find((c) => c.id === d.collectionId)?.myRole);
+  const m = d.metadata;
+  let body = '';
+  if (tab === 'meta') body = `<form id="meta"><div class="fgrid"><label class="f">Title<input name="title" value="${esc(d.title)}"></label><label class="f">Creators<input name="creators" value="${esc((m.creators || []).join(', '))}"></label>
+      <label class="f">Keywords<input name="keywords" value="${esc((m.keywords || []).join(', '))}"></label><label class="f">License<input name="license" value="${esc(m.license)}"></label>
+      <label class="f">Type<input name="resourceType" value="${esc(m.resourceType)}"></label><label class="f">Language<input name="language" value="${esc(m.language)}"></label>
+      <label class="f">Sensitivity<select name="label">${['Public', 'Internal', 'Protected'].map((l) => `<option ${l === d.label ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      <label class="f" style="margin-top:8px">Description<textarea name="description">${esc(m.description)}</textarea></label>${w ? '<button class="btn pri" style="margin-top:8px">Save metadata</button>' : ''}</form>`;
+  if (tab === 'versions') body = `<table><tr><th>v</th><th>File</th><th>By</th><th>When</th><th></th></tr>${[...d.versions].reverse().map((v) => `<tr><td>${v.version}</td><td>${esc(v.filename)}<div class="muted">${esc(v.comment)} sha256 ${v.sha256.slice(0, 10)}…</div></td><td>${esc(v.createdByUpn)}</td><td class="muted">${ago(v.createdAt)}</td><td><button class="btn sm" data-dl="${d.id}" data-v="${v.version}">Download</button></td></tr>`).join('')}</table>
+      ${w ? `<form id="newver" class="bar" style="margin-top:10px"><input type="file" name="file" required><input name="comment" placeholder="Change note" class="grow"><button class="btn pri">Upload version</button></form>` : ''}`;
+  if (tab === 'jsonld') body = S.drawer.jsonld ? `<p class="muted">schema.org JSON-LD — harvestable by catalogs and repositories.</p><pre>${esc(JSON.stringify(S.drawer.jsonld, null, 2))}</pre>` : 'Loading…';
+  if (tab === 'history') body = S.drawer.history ? `<table><tr><th>When</th><th>Who</th><th>App</th><th>Action</th></tr>${S.drawer.history.map((e) => `<tr><td class="muted">${ago(e.ts)}</td><td>${esc(e.upn)}</td><td>${esc(e.app)}</td><td>${esc(e.action)} ${e.outcome !== 'success' ? `<b style="color:var(--danger)">${e.outcome}</b>` : ''}</td></tr>`).join('')}</table>` : 'Loading…';
+  if (tab === 'manage') body = w ? `<form id="move" class="box"><b>Move to another notebook</b><div class="bar" style="margin-top:8px"><select name="dest" class="grow">${S.cols.filter((c) => c.id !== d.collectionId && c.myRole !== 'read').map((c) => `<option value="${c.id}">${esc(c.name)} (${c.label})</option>`).join('')}</select><input name="reason" placeholder="Reason"><button class="btn">Move</button></div></form>
+      <div class="box"><b>Delete</b><p class="muted">Moves the source to Trash. It can be restored.</p><button class="btn dan" data-del="${d.id}">Delete source</button></div>` : '<p class="muted">Read-only access.</p>';
+  dr.innerHTML = `<div class="bar"><h3 class="grow" style="margin:0">${esc(d.title)}</h3><button class="btn sm" data-dl="${d.id}">Download</button><button class="btn sm" data-close>✕</button></div>
+    <div class="muted">${esc(d.pid)} · ${esc(d.collectionName)}</div>
+    <div class="tabs">${[['meta', 'FAIR metadata'], ['versions', 'Versions'], ['jsonld', 'JSON-LD'], ['history', 'History'], ['manage', 'Move / delete']].map(([k, l]) => `<button data-dtab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>${body}`;
+  dr.classList.add('open');
+}
+
+async function openDrawer(id, tab = 'meta') {
+  S.drawer = { id, tab, doc: (S.results || []).find((d) => d.id === id) };
+  render();
+  if (tab === 'jsonld') S.drawer.jsonld = await fd.exportMetadata(id);
+  if (tab === 'history') S.drawer.history = await fd.documentAudit(id);
+  renderDrawer();
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button, .card');
+  if (!t) return;
+  const ds = t.dataset;
+  if (ds.col) { S.view = 'notebook'; S.drawer = null; run(() => loadCols(ds.col)); }
+  else if (ds.view) { S.view = ds.view; S.drawer = null; if (ds.view === 'dashboard') run(async () => { S.stats = await fd.stats(); S.audit = await fd.audit({ limit: 50 }); }); else render(); }
+  else if (ds.open) openDrawer(ds.open);
+  else if (ds.dtab) openDrawer(S.drawer.id, ds.dtab);
+  else if ('close' in ds) { S.drawer = null; render(); }
+  else if (ds.dl) run(async () => saveDownload(await fd.download(ds.dl, { version: ds.v })));
+  else if (ds.del) run(async () => { await fd.deleteDocument(ds.del); S.drawer = null; await loadCols(); }, 'Moved to Trash.');
+  else if (ds.restore) run(async () => { await fd.restoreDocument(ds.restore); await loadCols(); }, 'Restored.');
+  else if (ds.unshare) run(async () => { await fd.unshare(S.col.id, ds.unshare); await loadCols(); }, 'Access revoked.');
+});
+
+document.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const f = e.target, v = Object.fromEntries(new FormData(f));
+  if (f.id === 'newnb') run(async () => { const c = await fd.createCollection({ name: v.name, label: v.label }); f.reset(); S.view = 'notebook'; await loadCols(c.id); }, 'Notebook created.');
+  if (f.id === 'addsrc') run(async () => { const file = f.file.files[0]; await fd.upload(S.col.id, file, { title: v.title || file.name, label: v.label, metadata: { description: v.description, keywords: list(v.keywords), resourceType: v.resourceType, license: v.license, creators: [S.me.name] } }); await loadCols(); }, 'Source added.');
+  if (f.id === 'share') run(async () => { const [type, id] = v.target.split(':'); await fd.share(S.col.id, { type, id, role: v.role }); await loadCols(); }, 'Shared.');
+  if (f.id === 'search') run(async () => { S.q = v.q; S.results = await fd.search(v.q); });
+  if (f.id === 'meta') run(async () => { await fd.updateMetadata(S.drawer.id, { title: v.title, label: v.label, metadata: { creators: list(v.creators), keywords: list(v.keywords), license: v.license, resourceType: v.resourceType, language: v.language, description: v.description } }); await loadCols(); }, 'Metadata saved.');
+  if (f.id === 'newver') run(async () => { await fd.newVersion(S.drawer.id, f.file.files[0], { comment: v.comment }); await loadCols(); }, 'New version uploaded.');
+  if (f.id === 'move') run(async () => { await fd.moveDocument(S.drawer.id, v.dest, v.reason); S.drawer = null; await loadCols(); }, 'Moved.');
+});
+
+$('#group').addEventListener('change', (e) => { fd.setGroup(e.target.value); S.col = null; S.view = 'notebook'; run(() => loadCols()); });
+
+await mountSignIn($('#signin'), { clientId: 'lab-notebook-spa', defaultUser: 'u-0002-achen', onToken: (t) => { token = t; S.col = null; S.drawer = null; run(boot); } });
+</script>
+</body>
+</html>

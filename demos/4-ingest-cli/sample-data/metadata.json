@@ -1,0 +1,6 @@
+{
+  "_default": { "creators": ["Dr. Jordan Okafor", "Genomics Research Lab"], "resourceType": "Dataset", "license": "All rights reserved", "keywords": ["rna-seq", "genomics"], "language": "en" },
+  "run-2026-11-03.csv": { "title": "RNA-seq QC — run 2026-11-03", "description": "RIN quality scores for run 1" },
+  "run-2026-11-10.csv": { "title": "RNA-seq QC — run 2026-11-10", "description": "RIN quality scores for run 2" },
+  "protocol.md": { "title": "Extraction protocol", "resourceType": "Text", "keywords": ["protocol"], "description": "Lab protocol for RNA extraction" }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "fairdoc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FAIRDOC — attachable, auditable document storage for web apps (reference server + integration demos)",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node start-all.js",
+    "server": "node server/index.js",
+    "demo:cli": "node demos/4-ingest-cli/fairdoc-cli.mjs walkthrough"
+  }
+}

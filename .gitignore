@@ -1,0 +1,4 @@
+data/
+node_modules/
+demos/4-ingest-cli/.token
+.DS_Store

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FAIRDOC Embed</title>
+<style>
+  :root { --bg:#ffffff; } @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#111827; } }
+  body { margin:0; background:var(--bg); }
+</style>
+</head>
+<body>
+<fairdoc-widget id="w"></fairdoc-widget>
+<script type="module">
+// FAIRDOC-hosted UI for iframe integration. The host page passes the user's token via
+// postMessage — never in the URL (URLs end up in logs and browser history).
+//   host → embed: { type:'fairdoc:init', token, group, tab? } | { type:'fairdoc:token', token } | { type:'fairdoc:tab', tab }
+//   embed → host: { type:'fairdoc:ready' } | { type:'fairdoc:event', event:{...} } | { type:'fairdoc:need-token' }
+import '../widget/fairdoc-widget.js';
+
+// Origins allowed to embed FAIRDOC and send it tokens (production: server config + CSP frame-ancestors).
+const ALLOWED_PARENTS = ['http://localhost:4300', 'http://127.0.0.1:4300'];
+const w = document.getElementById('w');
+w.setAttribute('api-base', location.origin);
+let token = null, parentOrigin = null;
+w.getToken = () => token;
+
+window.addEventListener('message', (e) => {
+  if (!ALLOWED_PARENTS.includes(e.origin) || e.source !== window.parent) return; // ignore anyone else
+  parentOrigin = e.origin;
+  const m = e.data || {};
+  if (m.type === 'fairdoc:init') {
+    token = m.token;
+    if (m.group) w.setAttribute('group', m.group); else w.removeAttribute('group');
+    if (m.tabs) w.setAttribute('tabs', m.tabs);
+    w.start().then(() => { if (m.tab) w.shadowRoot.querySelector(`[data-a="tab"][data-v="${m.tab}"]`)?.click(); });
+  }
+  if (m.type === 'fairdoc:token') token = m.token; // silent token refresh from host
+  if (m.type === 'fairdoc:tab') w.shadowRoot.querySelector(`[data-a="tab"][data-v="${m.tab}"]`)?.click();
+});
+
+w.addEventListener('fairdoc:event', (e) => {
+  if (!parentOrigin) return;
+  const ev = JSON.parse(JSON.stringify(e.detail));
+  window.parent.postMessage({ type: 'fairdoc:event', event: ev }, parentOrigin);
+  if (ev.type === 'error' && ev.status === 401) window.parent.postMessage({ type: 'fairdoc:need-token' }, parentOrigin);
+});
+
+// Announce readiness to every allowed parent origin (only the real parent will match).
+for (const o of ALLOWED_PARENTS) { try { window.parent.postMessage({ type: 'fairdoc:ready' }, o); } catch {} }
+</script>
+</body>
+</html>

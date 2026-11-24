@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Advising Portal</title>
+<style>
+  :root { --bg:#f4f6fa; --fg:#0f1d33; --muted:#5b6b82; --card:#fff; --line:#d9e0ea; --brand:#0b4f8a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0c1320; --fg:#e6edf7; --muted:#8fa1ba; --card:#131d2e; --line:#24324a; --brand:#5aa9ec; } }
+  :root[data-theme="dark"] { --bg:#0c1320; --fg:#e6edf7; --muted:#8fa1ba; --card:#131d2e; --line:#24324a; --brand:#5aa9ec; }
+  * { box-sizing:border-box; } body { margin:0; font:14px/1.5 "Segoe UI", system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  .top { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; background:var(--card); border-bottom:3px solid var(--brand); flex-wrap:wrap; }
+  .top b { color:var(--brand); font-size:17px; }
+  main { max-width:1150px; margin:0 auto; padding:18px 16px; }
+  .note { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:8px; padding:10px 14px; color:var(--muted); font-size:13.5px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:14px 0; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 12px; } .kpi b { display:block; font-size:22px; }
+  .muted { color:var(--muted); } select, a.btn { font:inherit; padding:5px 10px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); text-decoration:none; }
+  fairdoc-widget { --fd-accent: var(--brand); }
+  code { font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="top"><b>🎓 Student Advising Portal</b>
+  <form action="/login" style="display:flex;gap:6px;align-items:center"><span class="muted" id="who">Not signed in</span>
+    <select name="user" aria-label="Demo user"><option value="u-0003-okafor">Dr. Jordan Okafor (advisor)</option><option value="u-0004-admin">Pat Morgan (IT admin)</option><option value="u-0001-srivera">Sam Rivera (student)</option></select>
+    <button class="btn">Sign in</button></form></div>
+<main>
+  <div class="note"><b>Demo 3 — Backend proxy (server-to-server).</b> The advising app's own server holds the O365 token in an HttpOnly session.
+    The browser only talks to <code>/fairdoc/*</code> on this origin, and the server forwards each call to FAIRDOC with the token and the Advising Office group.
+    The same widget is used here, pointed at the proxy. The summary tiles below come from the app server calling FAIRDOC through the SDK.
+    Open DevTools → Network: no request goes to FAIRDOC directly, and no token appears.</div>
+  <div class="kpis" id="kpis"></div>
+  <fairdoc-widget id="docs" api-base="/fairdoc"></fairdoc-widget>
+</main>
+<script type="module">
+  await import('{{FAIRDOC}}/widget/fairdoc-widget.js');
+  const sess = await (await fetch('/session')).json();
+  const docs = document.getElementById('docs');
+  if (!sess) { location.href = '/login?user=u-0003-okafor'; }
+  else {
+    document.getElementById('who').textContent = `${sess.user.name}${sess.inAdvising ? ' · Advising Office' : ' · personal files only'} · token held server-side`;
+    docs.getToken = () => null; // no token in the browser — the proxy adds it
+    docs.start();
+    const loadKpis = async () => {
+      const s = await (await fetch('/case-summary')).json();
+      document.getElementById('kpis').innerHTML = [['Case file collections', s.caseFiles], ['Documents', s.documents], ['Protected (FERPA)', s.protected], ['Recoverable in trash', s.inTrash], ['Last activity', s.lastActivity ? new Date(s.lastActivity).toLocaleTimeString() : '—']]
+        .map(([k, v]) => `<div class="kpi"><span class="muted">${k}</span><b>${v}</b></div>`).join('');
+    };
+    loadKpis();
+    docs.addEventListener('fairdoc:event', loadKpis);
+  }
+</script>
+</body>
+</html>
